@@ -21,7 +21,6 @@ from data_loader import load_and_clean_data
 from draft_analyzer import print_draft_insights, is_my_pick
 from recommendation_engine import RecommendationEngine
 
-# ============= Data & Engine =============
 df = load_and_clean_data()
 if df is None:
     print("Failed to load data. Exiting.")
@@ -30,10 +29,9 @@ if df is None:
 df["Drafted"] = False
 recommendation_engine = RecommendationEngine(df)
 
-TEST_MODE = True
+TEST_MODE = False
 
 
-# ============= Draft State =============
 class DraftState:
     def __init__(self, total_teams, your_draft_slot, current_pick=1):
         self.total_teams = total_teams
@@ -79,8 +77,6 @@ class DraftState:
     def get_manual_picks(self):
         return self.manual_picks.copy()
 
-
-# ============= ESPN Integration =============
 draft_state = DraftState(TOTAL_TEAMS, YOUR_DRAFT_SLOT, current_pick=1)
 
 if TEST_MODE:
@@ -100,7 +96,7 @@ else:
     except Exception as e:
         print(f"Failed to connect to ESPN league: {e}")
         print("Falling back to TEST MODE")
-        TEST_MODE = True
+        TEST_MODE = False
 
     def fetch_draft_recap(league_id, year):
         try:
@@ -156,8 +152,142 @@ else:
             return set()
 
 
-# ============= UI =============
 def create_main_window():
+    # Theme and color palette
+    sg.theme('DarkGrey13')
+    BG = '#0d1117'            # Background
+    CARD_BG = '#161b22'       # Section background
+    TEXT = '#e6edf3'          # Main text
+    ACCENT = '#58a6ff'        # Accent blue
+    SUCCESS = '#3fb950'
+    WARNING = '#d29922'
+    ERROR = '#f85149'
+    MUTED = '#8b949e'
+
+    def metric(label, key, color):
+        return sg.Column([
+            [sg.Text(label, font=('Helvetica', 10), text_color=MUTED, background_color=CARD_BG)],
+            [sg.Text('-', key=key, font=('Helvetica', 18, 'bold'), text_color=color, background_color=CARD_BG)]
+        ], pad=(10, 5), background_color=CARD_BG)
+
+    # Header bar
+    header_row = [
+        sg.Column([
+            [sg.Text('🏈 ESPN Draft Assistant', font=('Helvetica', 24, 'bold'), text_color=SUCCESS, background_color=BG)],
+            [sg.Text(f'Draft Slot: {YOUR_DRAFT_SLOT + 1} | Teams: {TOTAL_TEAMS}',
+                     font=('Helvetica', 12), text_color=MUTED, background_color=BG)],
+            [sg.Text('', key='-HEADER_STATUS-', font=('Helvetica', 13, 'bold'), text_color=TEXT, background_color=BG)]
+        ], expand_x=True, background_color=BG),
+        sg.Column([
+            [sg.Button('🔄 Refresh', key='-REFRESH-', size=(14, 1), font=('Helvetica', 11), button_color=('white', '#3498DB')),
+             sg.Button('➕ Add Pick', key='-ADD_PICK-', size=(14, 1), font=('Helvetica', 11), button_color=('white', '#27AE60')),
+             sg.Button('👥 Show Roster', key='-SHOW_ROSTER-', size=(14, 1), font=('Helvetica', 11), button_color=('white', '#E67E22')),
+             sg.Button('👁️ Show Picks', key='-SHOW_PICKS-', size=(14, 1), font=('Helvetica', 11), button_color=('white', '#9B59B6'))],
+            [sg.Button('🗑️ Clear All', key='-CLEAR_PICKS-', size=(14, 1), font=('Helvetica', 11), button_color=('white', '#E74C3C')),
+             sg.Button('🔍 Debug', key='-DEBUG-', size=(14, 1), font=('Helvetica', 11), button_color=('white', '#95A5A6')),
+             sg.Button('❌ Exit', key='-EXIT-', size=(14, 1), font=('Helvetica', 11), button_color=('white', '#C0392B'))]
+        ], element_justification='right', pad=(20, 10), background_color=BG)
+    ]
+
+    # Draft Status as metric tiles
+    draft_status_frame = sg.Frame(
+        '📊 Draft Status',
+        [[metric('Current Pick', '-CURRENT_PICK-', SUCCESS),
+          metric('Round', '-CURRENT_ROUND-', ACCENT),
+          metric('Drafted', '-DRAFTED_COUNT-', WARNING),
+          metric('Your Turn', '-YOUR_TURN-', ERROR)]],
+        font=('Helvetica', 13, 'bold'), background_color=CARD_BG, title_color=TEXT, relief=sg.RELIEF_FLAT, border_width=1
+    )
+
+    # Manual Picks
+    manual_picks_frame = sg.Frame(
+        '✏️ Manual Picks',
+        [[sg.Text('0 picks added', key='-MANUAL_PICKS-', font=('Helvetica', 11), text_color=TEXT, background_color=CARD_BG)]],
+        font=('Helvetica', 13, 'bold'), background_color=CARD_BG, title_color=TEXT, relief=sg.RELIEF_FLAT, border_width=1
+    )
+
+    # Collapsible roster
+    roster_frame = sg.pin(
+        sg.Frame(
+            '👥 Roster',
+            [[sg.Multiline(size=(80, 10), key='-CURRENT_ROSTER-', disabled=True,
+                           background_color='#0d1117', text_color=TEXT, font=('Consolas', 11), border_width=0)]],
+            font=('Helvetica', 13, 'bold'), background_color=CARD_BG, title_color=TEXT, relief=sg.RELIEF_FLAT, border_width=1,
+            key='-ROSTER_FRAME-'
+        )
+    )
+
+    # Legend
+    legend_frame = sg.Frame(
+        '📋 Legend',
+        [[sg.Text('🟢 Tier 1   🟡 Tier 2   🟠 Tier 3   🔴 Tier 4+    📉 Cliff   ⏰ Early QB',
+                  font=('Helvetica', 11), text_color=MUTED, background_color=CARD_BG)]],
+        font=('Helvetica', 13, 'bold'), background_color=CARD_BG, title_color=TEXT, relief=sg.RELIEF_FLAT, border_width=1
+    )
+
+    # Recommendations
+    recommendations_frame = sg.Frame(
+        '🎯 Recommendations',
+        [[sg.Multiline(size=(80, 8), key='-RECOMMENDATIONS-', disabled=True,
+                       background_color='#0d1117', text_color=TEXT, font=('Consolas', 11), border_width=0)]],
+        font=('Helvetica', 13, 'bold'), background_color=CARD_BG, title_color=TEXT, relief=sg.RELIEF_FLAT, border_width=1
+    )
+
+    # Position Analysis
+    position_analysis_frame = sg.Frame(
+        '📈 Position Analysis',
+        [
+            [sg.Button('QB', key='-QB_ANALYSIS-', size=(8, 1), font=('Helvetica', 11)),
+             sg.Button('RB', key='-RB_ANALYSIS-', size=(8, 1), font=('Helvetica', 11)),
+             sg.Button('WR', key='-WR_ANALYSIS-', size=(8, 1), font=('Helvetica', 11)),
+             sg.Button('TE', key='-TE_ANALYSIS-', size=(8, 1), font=('Helvetica', 11)),
+             sg.Button('📊 Overall', key='-OVERALL_ANALYSIS-', size=(12, 1), font=('Helvetica', 11))],
+            [sg.Multiline(size=(70, 18), key='-POSITION_ANALYSIS-', disabled=True,
+                          background_color='#0d1117', text_color=TEXT, font=('Consolas', 11), border_width=0)]
+        ],
+        font=('Helvetica', 13, 'bold'), background_color=CARD_BG, title_color=TEXT, relief=sg.RELIEF_FLAT, border_width=1
+    )
+
+    # Player Analysis
+    player_analysis_frame = sg.Frame(
+        '📊 Player Analysis (Top 10 by Ceiling)',
+        [
+            [sg.Button('QB', key='-QB_PLAYER_ANALYSIS-', size=(8, 1), font=('Helvetica', 11)),
+             sg.Button('RB', key='-RB_PLAYER_ANALYSIS-', size=(8, 1), font=('Helvetica', 11)),
+             sg.Button('WR', key='-WR_PLAYER_ANALYSIS-', size=(8, 1), font=('Helvetica', 11)),
+             sg.Button('TE', key='-TE_PLAYER_ANALYSIS-', size=(8, 1), font=('Helvetica', 11)),
+             sg.Button('📊 All', key='-ALL_PLAYER_ANALYSIS-', size=(12, 1), font=('Helvetica', 11))],
+            [sg.Multiline(size=(70, 18), key='-PLAYER_ANALYSIS-', disabled=True,
+                          background_color='#0d1117', text_color=TEXT, font=('Consolas', 11), border_width=0)]
+        ],
+        font=('Helvetica', 13, 'bold'), background_color=CARD_BG, title_color=TEXT, relief=sg.RELIEF_FLAT, border_width=1
+    )
+
+    # Layout
+    layout = [
+        [header_row],
+        [sg.HorizontalSeparator(color='#30363d', pad=(0, 15))],
+        [draft_status_frame],
+        [manual_picks_frame],
+        [roster_frame],
+        [legend_frame],
+        [recommendations_frame],
+        [sg.Column([
+            [position_analysis_frame]
+        ], expand_x=True, expand_y=True, pad=(0, 0)),
+         sg.Column([
+            [player_analysis_frame]
+        ], expand_x=True, expand_y=True, pad=(0, 0))]
+    ]
+
+    window = sg.Window('ESPN Draft Assistant', layout, finalize=True, resizable=True,
+                       size=(1800, 1000), location=(100, 100), background_color=BG)
+
+    window.roster_visible = False
+    window['-ROSTER_FRAME-'].update(visible=False)
+    window['-SHOW_ROSTER-'].update('👥 Show Roster', button_color=('white', '#2196F3'))
+    return window
+
     sg.theme('DarkBlue3')
     title_color = '#66BB6A'
     section_color = '#42A5F5'
@@ -167,9 +297,12 @@ def create_main_window():
         sg.Frame(
             '👥 Roster',
             [[sg.Multiline(size=(80, 10), key='-CURRENT_ROSTER-', disabled=True,
-                           background_color='#1e1e1e', text_color='#E0E0E0', font=('Consolas', 10))]],
-            font=('Helvetica', 12, 'bold'),
+                           background_color='#1e1e1e', text_color='#E0E0E0', font=('Consolas', 11))]],
+            font=('Helvetica', 13, 'bold'),
             key='-ROSTER_FRAME-',
+            relief=sg.RELIEF_RAISED,
+            border_width=3,
+            background_color='#2C3E50'
         ),
         expand_x=True
     )
@@ -178,30 +311,30 @@ def create_main_window():
     header_row = [
         # Left side: Title and draft info
         sg.Column([
-            [sg.Text('🏈 ESPN Draft Assistant', font=('Helvetica', 20, 'bold'),
+            [sg.Text('🏈 ESPN Draft Assistant', font=('Helvetica', 24, 'bold'),
                      text_color=title_color, justification='left')],
             [sg.Text(f'Draft Slot: {YOUR_DRAFT_SLOT + 1} | Teams: {TOTAL_TEAMS}',
-                     font=('Helvetica', 11), text_color='white', justification='left')],
-            [sg.Text('', key='-HEADER_STATUS-', font=('Helvetica', 12, 'bold'), 
+                     font=('Helvetica', 12), text_color='white', justification='left')],
+            [sg.Text('', key='-HEADER_STATUS-', font=('Helvetica', 13, 'bold'), 
                      text_color='white', justification='left')]  # Your Turn status
-        ], expand_x=True, element_justification='left'),
+        ], expand_x=True, element_justification='left', pad=(20, 10)),
         
         # Right side: Controls in compact horizontal layout
         sg.Column([
-            [sg.Button('🔄 Refresh', key='-REFRESH-', size=(12, 1), font=('Helvetica', 11)),
-             sg.Button('➕ Add Pick', key='-ADD_PICK-', size=(12, 1), font=('Helvetica', 11)),
-             sg.Button('👥 Show Roster', key='-SHOW_ROSTER-', size=(12, 1), font=('Helvetica', 11)),
-             sg.Button('👁️ Show Picks', key='-SHOW_PICKS-', size=(12, 1), font=('Helvetica', 11))],
-            [sg.Button('🗑️ Clear All', key='-CLEAR_PICKS-', size=(12, 1), font=('Helvetica', 11)),
-             sg.Button('🔍 Debug', key='-DEBUG-', size=(12, 1), font=('Helvetica', 11)),
-             sg.Button('❌ Exit', key='-EXIT-', size=(12, 1), font=('Helvetica', 11)),
-             sg.Text('', size=(12, 1))]  # Spacer to align with 4-button row
-        ], element_justification='right', pad=(10, 0))
+            [sg.Button('🔄 Refresh', key='-REFRESH-', size=(14, 1), font=('Helvetica', 11), button_color=('white', '#3498DB')),
+             sg.Button('➕ Add Pick', key='-ADD_PICK-', size=(14, 1), font=('Helvetica', 11), button_color=('white', '#27AE60')),
+             sg.Button('👥 Show Roster', key='-SHOW_ROSTER-', size=(14, 1), font=('Helvetica', 11), button_color=('white', '#E67E22')),
+             sg.Button('👁️ Show Picks', key='-SHOW_PICKS-', size=(14, 1), font=('Helvetica', 11), button_color=('white', '#9B59B6'))],
+            [sg.Button('🗑️ Clear All', key='-CLEAR_PICKS-', size=(14, 1), font=('Helvetica', 11), button_color=('white', '#E74C3C')),
+             sg.Button('🔍 Debug', key='-DEBUG-', size=(14, 1), font=('Helvetica', 11), button_color=('white', '#95A5A6')),
+             sg.Button('❌ Exit', key='-EXIT-', size=(14, 1), font=('Helvetica', 11), button_color=('white', '#C0392B')),
+             sg.Text('', size=(14, 1))]  # Spacer to align with 4-button row
+        ], element_justification='right', pad=(20, 10))
     ]
 
     # Main content area (resizable when roster is hidden)
     main_content = sg.Column([
-        [sg.HorizontalSeparator(color='gray', pad=(0, 10))],
+        [sg.HorizontalSeparator(color='#34495E', pad=(0, 15))],
         [sg.Frame('📊 Draft Status', [
             [sg.Column([
                 [sg.Text('Current Pick:', font=('Helvetica', 11, 'bold'), text_color='#E3F2FD'),
@@ -213,27 +346,40 @@ def create_main_window():
                 [sg.Text('Your Turn:', font=('Helvetica', 11, 'bold'), text_color='#E3F2FD'),
                  sg.Text('NO', key='-YOUR_TURN-', font=('Helvetica', 14, 'bold'), text_color='#F44336')]
             ], expand_x=True, pad=(10, 8))]
-        ], font=('Helvetica', 12, 'bold'), expand_x=True, pad=(0, 5))],
+        ], font=('Helvetica', 13, 'bold'), expand_x=True, pad=(10, 10), relief=sg.RELIEF_RAISED, border_width=3, background_color='#2C3E50')],
         [sg.Frame('✏️ Manual Picks', [
-            [sg.Text('0 picks added', key='-MANUAL_PICKS-', font=('Helvetica', 10), text_color='white')]
-        ], font=('Helvetica', 12, 'bold'), expand_x=True, pad=(0, 5))],
+            [sg.Text('0 picks added', key='-MANUAL_PICKS-', font=('Helvetica', 11), text_color='white')]
+        ], font=('Helvetica', 13, 'bold'), expand_x=True, pad=(10, 10), relief=sg.RELIEF_RAISED, border_width=3, background_color='#34495E')],
         [roster_section],
         [sg.Frame('📋 Legend', [[
-            sg.Text('🟢 Tier 1   🟡 Tier 2   🟠 Tier 3   🔴 Tier 4+    📉 Cliff   ⏰ Early QB', font=('Helvetica', 10))
-        ]], font=('Helvetica', 10, 'bold'), expand_x=True, pad=(0, 5))],
+            sg.Text('🟢 Tier 1   🟡 Tier 2   🟠 Tier 3   🔴 Tier 4+    📉 Cliff   ⏰ Early QB', font=('Helvetica', 11))
+        ]], font=('Helvetica', 13, 'bold'), expand_x=True, pad=(10, 10), relief=sg.RELIEF_RAISED, border_width=3, background_color='#34495E')],
         [sg.Frame('🎯 Recommendations', [
             [sg.Multiline(size=(80, 8), key='-RECOMMENDATIONS-', disabled=True,
-                          background_color='#1e1e1e', text_color='#E0E0E0', font=('Consolas', 10))]
-        ], font=('Helvetica', 12, 'bold'), expand_x=True, pad=(0, 5))],
-        [sg.Frame('📈 Position Analysis', [
-            [sg.Button('QB', key='-QB_ANALYSIS-', size=(6, 1)),
-             sg.Button('RB', key='-RB_ANALYSIS-', size=(6, 1)),
-             sg.Button('WR', key='-WR_ANALYSIS-', size=(6, 1)),
-             sg.Button('TE', key='-TE_ANALYSIS-', size=(6, 1)),
-             sg.Button('📊 Overall', key='-OVERALL_ANALYSIS-', size=(10, 1))],
-            [sg.Multiline(size=(80, 15), key='-POSITION_ANALYSIS-', disabled=True,
-                          background_color='#1e1e1e', text_color='#E0E0E0', font=('Consolas', 10))]
-        ], font=('Helvetica', 12, 'bold'), expand_x=True, pad=(0, 5))],
+                          background_color='#1e1e1e', text_color='#E0E0E0', font=('Consolas', 11))]
+        ], font=('Helvetica', 13, 'bold'), expand_x=True, pad=(10, 10), relief=sg.RELIEF_RAISED, border_width=3, background_color='#2C3E50')],
+        [sg.Column([
+            [sg.Frame('📈 Position Analysis', [
+                [sg.Button('QB', key='-QB_ANALYSIS-', size=(8, 1), font=('Helvetica', 11)),
+                 sg.Button('RB', key='-RB_ANALYSIS-', size=(8, 1), font=('Helvetica', 11)),
+                 sg.Button('WR', key='-WR_ANALYSIS-', size=(8, 1), font=('Helvetica', 11)),
+                 sg.Button('TE', key='-TE_ANALYSIS-', size=(8, 1), font=('Helvetica', 11)),
+                 sg.Button('📊 Overall', key='-OVERALL_ANALYSIS-', size=(12, 1), font=('Helvetica', 11))],
+                [sg.Multiline(size=(70, 18), key='-POSITION_ANALYSIS-', disabled=True,
+                              background_color='#1e1e1e', text_color='#E0E0E0', font=('Consolas', 11))]
+            ], font=('Helvetica', 13, 'bold'), expand_x=True, expand_y=True, pad=(10, 10), relief=sg.RELIEF_RAISED, border_width=3, background_color='#2C3E50')],
+        ], expand_x=True, expand_y=True, pad=(5, 0)),
+         sg.Column([
+            [sg.Frame('📊 Player Analysis (Top 10 by Ceiling)', [
+                [sg.Button('QB', key='-QB_PLAYER_ANALYSIS-', size=(8, 1), font=('Helvetica', 11)),
+                 sg.Button('RB', key='-RB_PLAYER_ANALYSIS-', size=(8, 1), font=('Helvetica', 11)),
+                 sg.Button('WR', key='-WR_PLAYER_ANALYSIS-', size=(8, 1), font=('Helvetica', 11)),
+                 sg.Button('TE', key='-TE_PLAYER_ANALYSIS-', size=(8, 1), font=('Helvetica', 11)),
+                 sg.Button('📊 All', key='-ALL_PLAYER_ANALYSIS-', size=(12, 1), font=('Helvetica', 11))],
+                [sg.Multiline(size=(70, 18), key='-PLAYER_ANALYSIS-', disabled=True,
+                              background_color='#1e1e1e', text_color='#E0E0E0', font=('Consolas', 11))]
+            ], font=('Helvetica', 13, 'bold'), expand_x=True, expand_y=True, pad=(10, 10), relief=sg.RELIEF_RAISED, border_width=3, background_color='#2C3E50')]
+        ], expand_x=True, expand_y=True, pad=(5, 0))],
     ], expand_x=True, expand_y=True)
 
     # Main layout with header and content
@@ -243,7 +389,7 @@ def create_main_window():
     ]
     
     window = sg.Window('ESPN Draft Assistant', layout, finalize=True, resizable=True,
-                       size=(1400, 1000), location=(100, 100))
+                       size=(1800, 1000), location=(100, 100))
     
     # remember roster visibility across refreshes
     window.roster_visible = False
@@ -252,7 +398,6 @@ def create_main_window():
     return window
 
 
-# ============= Manual Pick Window =============
 def create_manual_pick_window(df, drafted, current_pick):
     # Ensure drafted is a set for efficient lookup
     if not isinstance(drafted, set):
@@ -309,7 +454,6 @@ def create_manual_pick_window(df, drafted, current_pick):
     return sg.Window('Manual Pick', layout, modal=True, finalize=True, resizable=True)
 
 
-# ============= Updates & Views =============
 def update_main_window(window, df, drafted, current_pick, manual_picks):
     all_drafted = draft_state.get_all_drafted()
     recommendation_engine.update_draft_state(all_drafted, {}, current_pick)
@@ -381,6 +525,10 @@ def update_main_window(window, df, drafted, current_pick, manual_picks):
         window['-POSITION_ANALYSIS-'].update(window.current_position_analysis)
     else:
         window['-POSITION_ANALYSIS-'].update("Tap a position above to see details.")
+    if hasattr(window, 'current_player_analysis'):
+        window['-PLAYER_ANALYSIS-'].update(window.current_player_analysis)
+    else:
+        window['-PLAYER_ANALYSIS-'].update("Tap a position above to see ceiling analysis.")
     window['-CURRENT_ROSTER-'].update("\n".join(roster_text))
 
     current_round = (current_pick - 1) // TOTAL_TEAMS + 1
@@ -417,7 +565,43 @@ def show_position_analysis(df, drafted, position):
     return "\n".join(lines)
 
 
-# ============= Main Loop =============
+def show_player_analysis(df, drafted, position=None):
+    """Show top 10 players by ceiling with detailed stats"""
+    all_drafted = draft_state.get_all_drafted()
+    available_df = df[~df['Player'].isin(all_drafted)]
+    
+    if position:
+        # Show specific position
+        pos_data = available_df[available_df['Position'] == position].sort_values('ceiling', ascending=False).head(10)
+        title = f"Top 10 by Ceiling"
+    else:
+        # Show all positions
+        pos_data = available_df.sort_values('ceiling', ascending=False).head(10)
+        title = "All Positions — Top 10 by Ceiling"
+    
+    tier_icon = {1: '🟢', 2: '🟡', 3: '🟠'}
+    lines = [title, ""]
+    
+    if len(pos_data) == 0:
+        lines.append("No players available.")
+    else:
+        # Header with better alignment
+        lines.append("Rank | Name            | Floor | Points | Ceiling | Tier | VOR")
+        lines.append("-" * 70)
+        
+        for i, (_, p) in enumerate(pos_data.iterrows(), 1):
+            icon = tier_icon.get(p['Tier'], '🔴')
+            points = f"{p['points']:.0f}" if not pd.isna(p['points']) else "N/A"
+            floor = f"{p['floor']:.0f}" if not pd.isna(p['floor']) else "N/A"
+            ceiling = f"{p['ceiling']:.0f}" if not pd.isna(p['ceiling']) else "N/A"
+            vor = f"{p['VOR']:.1f}" if not pd.isna(p['VOR']) else "N/A"
+            
+            # Better column alignment
+            lines.append(f"{icon} {i:2d} | {p['Player']:<16} | {floor:>5} | {points:>6} | {ceiling:>7} | T{p['Tier']} | {vor:>5}")
+    
+    return "\n".join(lines)
+
+
 def main():
     window = create_main_window()
 
@@ -624,6 +808,18 @@ def main():
                 sg.popup_scrolled(window.overarching_analysis, title="Overall", size=(80, 25))
             else:
                 sg.popup("No analysis yet. Hit Refresh.")
+
+        elif event in ['-QB_PLAYER_ANALYSIS-', '-RB_PLAYER_ANALYSIS-', '-WR_PLAYER_ANALYSIS-', '-TE_PLAYER_ANALYSIS-']:
+            position = {'-QB_PLAYER_ANALYSIS-': 'QB', '-RB_PLAYER_ANALYSIS-': 'RB',
+                        '-WR_PLAYER_ANALYSIS-': 'WR', '-TE_PLAYER_ANALYSIS-': 'TE'}[event]
+            analysis = show_player_analysis(df, drafted, position)
+            window['-PLAYER_ANALYSIS-'].update(analysis)
+            window.current_player_analysis = analysis
+
+        elif event == '-ALL_PLAYER_ANALYSIS-':
+            analysis = show_player_analysis(df, drafted)
+            window['-PLAYER_ANALYSIS-'].update(analysis)
+            window.current_player_analysis = analysis
 
     window.close()
 
