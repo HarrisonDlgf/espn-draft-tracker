@@ -31,6 +31,11 @@ score = (
 - **Half-PPR**: Boosts WRs, adjusts TE values
 - **Position weights** scale with actual VOR values
 
+### **Z-Score Style Urgency**
+- The new methodology is to not compare value over replacement absolutely because running backs on average, possess a higher mean VOD. So, now we analyze intra-positionally
+which players might be drafted (based on composite ADP) in between your next pick. This produces an urgency value, what position will you benefit from the most given
+your roster composition and the available players. This factors in the standard deviations from the FFAnalysis data set.
+
 ## 🔌 ESPN API Connection
 
 ### **Authentication**
@@ -62,6 +67,7 @@ python src/setup_mock_draft.py
 ### **GUI Interface**
 - **Real-time updates**: Live draft status and recommendations
 - **Position analysis**: Detailed breakdowns by position
+- **Floor, Projected Points, Ceiling Tab** View which available players have the highest ceiling and assess your own risk of drafting those 
 - **Manual pick system**: Tabbed interface for marking drafted players
 - **Auto-refresh**: Window updates after adding players
 
