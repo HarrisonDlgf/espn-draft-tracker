@@ -46,7 +46,7 @@ Uses ESPN's cookie-based authentication by going into the developer tools (fn + 
 4. **League Settings**: Fallback for draft status
 
 ### **Main Data Used**
-- I utilized this data source
+- I utilized this [data source](https://apps.fantasyfootballanalytics.net/) from FFAnalytics, I really enjoy that their projections are not just a singular number, but have variance, cutoff, VOR, and a range of numbers over simulations. Their methodology is really interesting when it comes to optimizing your draft strategy.
 
 ### **Connection Setup**
 ```bash
@@ -85,15 +85,9 @@ python src/main.py
 
 ## 📊 Data Requirements
 
-### **CSV Format**
-```csv
-Player,Position,VOR,Tier,ADP,ceiling,floor,uncertainty
-Josh Allen,QB,88.6,1,18.1,95.2,82.1,15.3
+### **Projections**
+-The projections are from [FFAnalytics](https://apps.fantasyfootballanalytics.net/), so no importing of csv necessary 
 ```
-
-### **Supported Files**
-- `projections_non_ppr.csv`: Non-PPR projections
-- `projections_half_ppr.csv`: Half-PPR projections
 
 ## ⚙️ Configuration
 
@@ -109,6 +103,7 @@ TOTAL_TEAMS = 12
 from config import set_league_type
 set_league_type('non_ppr')    # or 'half_ppr'
 ```
+- Everything you may need is found in the config.py file
 
 ## 🚀 Quick Start
 
@@ -144,6 +139,4 @@ espn-draft-tracker/
 - **Auto-refresh**: Updates after adding players
 - **Color-coded Tiers**: Visual player quality indicators
 
----
-
-**Ready to dominate your fantasy football draft!** 🏈⚡
+--- Created by Harrison Dolgoff, thank you to FFAnalytics for the open source data set and ESPNApi for connecting to live ESPN draft data
