@@ -26,9 +26,35 @@ def set_scoring_type():
             print("\nExiting...")
             sys.exit(0)
 
-def configure_manual_mode(scoring_type):
+def get_current_pick():
+    """Get the current draft pick number from the user"""
+    print("\n📊 Draft Position Setup")
+    print("=" * 40)
+    print("What pick number are you drafting on?")
+    print("(e.g., 1 = first pick, 11 = 11th pick, etc.)")
+    print()
+    
+    while True:
+        try:
+            pick = input("Enter current pick number: ").strip()
+            pick_num = int(pick)
+            
+            if pick_num < 1:
+                print("Pick number must be 1 or higher")
+                continue
+                
+            print(f"✅ Set to pick #{pick_num}")
+            return pick_num
+            
+        except ValueError:
+            print("Please enter a valid number")
+        except KeyboardInterrupt:
+            print("\nExiting...")
+            sys.exit(0)
+
+def configure_manual_mode(scoring_type, current_pick):
     """Configure the system for manual mode"""
-    print(f"\n Configuring manual mode for {scoring_type.upper()}...")
+    print(f"\n Configuring manual mode for {scoring_type.upper()} at pick #{current_pick}...")
     
     # Import and set scoring type
     try:
@@ -65,12 +91,13 @@ def launch_manual_gui():
     print("=" * 40)
     print("Features available:")
     print("• Manual pick selection (50 players per position)")
-    print("• VOR-based recommendations")
-    print("• Position analysis")
-    print("• Color-coded tiers")
+    print("• Position-first recommendations with urgency analysis")
+    print("• Current roster display")
+    print("• Color-coded tiers and urgency levels")
     print("• Auto-refresh after adding players")
     print()
     print("Use the '➕ Add Pick' button to add players manually")
+    print("Use the '👥 Show Roster' button to view your current team")
     print("Press Ctrl+C to exit")
     print("=" * 40)
     
@@ -128,8 +155,11 @@ def main():
                 # Get scoring type
                 scoring_type = set_scoring_type()
                 
+                # Get current pick
+                current_pick = get_current_pick()
+                
                 # Configure manual mode
-                if configure_manual_mode(scoring_type):
+                if configure_manual_mode(scoring_type, current_pick):
                     # Launch GUI
                     launch_manual_gui()
                 else:

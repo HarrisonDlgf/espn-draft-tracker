@@ -223,7 +223,7 @@ def show_draft_status(current_pick, drafted, is_my_turn):
     print(f"Current pick: #{current_pick}")
     print(f"Round: {(current_pick - 1) // TOTAL_TEAMS + 1}")
     print(f"Players drafted: {len(drafted)}")
-    print(f"Your turn: {'YES' if is_my_turn else 'NO'}")
+    print(f"{'YES' if is_my_turn else 'NO'}")
     
     if len(drafted) > 0:
         print(f"Recent picks: {list(drafted)[-5:]}")  # Show last 5 picks
