@@ -137,12 +137,44 @@ espn-draft-tracker/
 
 ## 🏆 Key Features
 
-- **VOR-First Approach**: 90% of score based on Value Over Replacement
-- **Dynamic ADP Penalties**: Scales with draft position
-- **Scoring Format Awareness**: Adjusts for PPR vs Non-PPR
-- **Real-time ESPN Integration**: Live draft data
-- **Manual Mode**: GUI for testing without ESPN
-- **Auto-refresh**: Updates after adding players
-- **Color-coded Tiers**: Visual player quality indicators
+## 🎯 Advanced Recommendation Engine
+- **Two-Layer Position-First Strategy**: Prioritizes positions based on urgency, then selects best players within that position
+- **Dynamic Position Urgency**: Calculates real-time position scarcity using within-position normalization and opportunity cost analysis
+- **Composite Scoring System**: 70% VOR + 15% Tier Bonus + 10% Cliff Bonus + 5% ADP Value + Risk/Round Adjustments
+
+## 🧠 Strategic Analysis & Insights
+- **Position Urgency Breakdown**: Detailed analysis of opportunity cost, cliff pressure, roster needs, and early-QB penalties
+- **Risk-Adjusted Scoring**: Floor/ceiling analysis with round-specific risk preferences (floor early, ceiling late)
+- **Cliff Detection**: Identifies significant VOR dropoffs (>20 points) to protect against positional scarcity
+- **Strategic Insights**: Real-time analysis of tier scarcity, position depth, and value opportunities
+
+## 🎲 Advanced Player Analytics
+- **Ceiling/Floor Analysis**: Top 10 players by ceiling with detailed floor/ceiling/points breakdown
+- **Uncertainty Scoring**: Risk assessment based on player volatility and projection uncertainty
+- **ADP Value Analysis**: Reach cost calculations and value opportunity identification
+- **Tier-Based Visualization**: Color-coded tiers (🟢🟡🟠🔴) with cliff and early-QB indicators
+
+## ⚙️ Scoring Format Intelligence
+- **PPR/Half-PPR/Non-PPR Awareness**: Automatic data source switching and position weight adjustments
+- **Position-Specific Weighting**: Dynamic multipliers based on league type and positional scarcity
+- **Reception Value Integration**: Proper PPR adjustments for WR/TE value calculations
+
+## 🔄 Real-Time Draft Integration
+- **Live ESPN Connection**: Automatic draft state updates with fallback to manual mode
+- **Snake Draft Logic**: Accurate pick prediction and turn tracking
+- **Auto-Refresh**: Continuous updates after adding players or refreshing data
+- **Draft State Management**: Comprehensive tracking of drafted players, roster composition, and pick timing
+
+## 📈 Enhanced Position Analysis
+- **Position-Specific Insights**: Detailed analysis for QB/RB/WR/TE with tier breakdowns and risk profiles
+- **Roster Need Analysis**: Critical/high/medium priority recommendations based on starting lineup requirements
+- **FLEX Position Optimization**: Smart recommendations considering RB/WR/TE flex eligibility
+- **Depth Analysis**: Real-time assessment of position scarcity and tier availability
+
+## 🎮 User Experience Features
+- **Modern Dark UI**: Professional interface with collapsible sections and intuitive controls
+- **Visual Status Indicators**: Color-coded urgency levels and turn notifications
+- **Manual Pick System**: Comprehensive GUI for testing without ESPN connection
+- **Debug & Analytics**: Detailed breakdowns of scoring calculations and strategic reasoning
 
 --- Created by Harrison Dolgoff, thank you to FFAnalytics for the open source data set and ESPNApi for connecting to live ESPN draft data
