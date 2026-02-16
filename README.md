@@ -1,10 +1,11 @@
 # 🏈 ESPN Draft Assistant
 
-The draft assistant analyzes historical fantasy football trends and factors in projections for the upcoming football season to become the
-best draft companion possible. The program is meant to recommend what position to draft next, and give the user a range 
-of recommended players within that scope. 
+When people go to ice cream stores with a million flavors, it can sometimes seem impossible to choose. That same thing happens in fantasy football drafts, so I put position analysis at the forefront of the recommendation engine.
 
-Built for on the clock urgency and live synced updating after every pick.
+The ESPN Draft Assistant analyzes historical fantasy football trends and factors in projections for the upcoming NFL football season to become the
+best draft companion possible.
+
+The program recommends what position to draft next and gives the user a range of recommended players within that scope. Built for on-the-clock urgency and live-synced updating after every pick.
 
 
 ## 📌 Table of Contents
@@ -22,21 +23,15 @@ Built for on the clock urgency and live synced updating after every pick.
 ## Who This Is For
 This is built for fantasy football players who want confidence and direction in their drafting strategy, rather than solely rankings
 
-**Casual players:** You want help making picks from a high-level strategy standpoint. The idea of drafting an entire roster
-without prior knowledge of how to do well is daunting, however, I hope this allows you to be able to retain some autonomy in your 
-drafting process while still guiding you towards well-informed picks that will improve your chances of winning it all!
+**Casual players:** Casual players want help making picks from a high-level strategy standpoint. Drafting an entire roster
+without prior knowledge of how to do well is daunting; however, this tool aims to help casual players retain some autonomy in your 
+drafting process while still guiding them towards well-informed picks that will improve their chances of winning it all!
 
 **Competitive players:** This type of player may already use rankings websites, knows a lot about average draft positions and tiers, but 
-wants to add a tool that factors in the drafting habits of your leaguemates and what position may be the most valuable to take.
+wants to add a tool that factors in the drafting habits of their leaguemates and which position may be the most valuable to take.
 
-**Builders/Contributions/Data Scientists:** The option to contribute makes this project more meaningful to me as open-source projects always
-end up being better. I attempted to share all of my passion for coding and fantasy football within this project, so I hope to allow others who 
-want to code a clear blueprint on how to tune this to your own liking and the option to extend this codebase into something more.
-
-#### Some Common Use Cases
-- I don't want to reach early on this player but I want high upside
-- I don't know when to draft quarterbacks because they seem so valuable
-- My next pick is so far away, what position will not be on the board when it is my turn?
+**Builders/Contributions/Data Scientists:** Contributors make this project more meaningful as open-source projects always
+end up being better. The project is designed to share all of my passion for coding and fantasy football within this project, and I hope advanced users can tune this to their own liking and the option to extend the codebase into something more.
 
 #### 🎮 User Experience Features
 - **Modern Dark UI**: Professional interface with collapsible sections and intuitive controls
@@ -47,19 +42,16 @@ want to code a clear blueprint on how to tune this to your own liking and the op
 ## What It Does
 There are two decisions every time a user picks a player in fantasy football: *What position and who?*
 
-When people go to ice cream stores with a million flavors, it can sometimes seem impossible to choose. That same thing happens to me in fantasy football drafts, so
-I put position analysis at the forefront of the recommendation engine.
-
 #### Recommendation Engine
 - **Position urgency recommendation**  
   The engine will recommend what position is most costly to wait on: in other words, even if there are some very talented players of one position available,
   it may be more important to take a different position due to the scarcity.
 
 - **Top players within that position:**  
-  A ranked list with how much potential they possess, their projected worst possible outcome, and an average outcome for a player with that profile.
+  The engine suggests players in the format of a ranked list with how much potential each player possesses, their projected worst possible outcome, and an average outcome for a player with that profile.
 
 - **Context Clues**  
-  The context clues indicate whether there is time sensitive decisions to make; such as if there are large cliffs in availability, the engine hopes to make clear the urgency to take specific players. Also, if your roster composition requires strengthening in certain areas, it may be in your best interest to draft in an unusual sense.
+  The context clues indicate whether there are time sensitive decisions to make; such as if there are large cliffs in availability. The relevant contextual components being what players have been drafted, what players remain, and how important their position is to the overall success of a fantasy football team.
 
 #### How The User Sees This (UI Behavior)
 - Updated recommendations after every pick
@@ -67,18 +59,20 @@ I put position analysis at the forefront of the recommendation engine.
 - Color Coding and Status Messages
 
 ## How The Engine Decides 🧠
-The core concept centers on two layers of strategy; position urgency and player scoring
+The core concept centers on two layers of strategy: position urgency and player scoring
 - What position is going to get worse **the fastest** before my next pick?
-- Now that I have picked that position, who gives me the best chance given risk, tiers, and ADP?
+- Now that I have picked that position, who gives me the best chance given risk, tiers, and ADP (average draft position)?
 
 #### Why This is Different
 My goal was to give you autonomy in your final decision after giving the user an array of options. By recommending a position, the end user
 may then select who they think best fits their needs. Most lists compare players across positions however I attempt to compare players using relative value within
-their own positions. Then, when listing the available options, the engine utilizes a projection data source that predicts (across 10,000 simulations) the selected player's
-floor (their worst case scenario), their projection (average outcome), and ceiling (their best case).
+their own positions. 
 
 ## How To Use This in a Real Draft
 ### 🚀 Quick Start
+
+For non-technical users, this section may seem confusing. Feel free to contact me if any of this does not make sense.
+Inside of an IDE (integrated development environment), such as VSCode, open a new terminal. In that terminal, you can then run the below commands.
 
 1. **Install dependencies**: `pip install -r requirements.txt`
 2. **Setup ESPN connection**: `python src/setup_mock_draft.py`
@@ -147,6 +141,7 @@ Review recommendations, check position analysis, and select your player
 
 
 ## The Data Source 📊
+For the majority of the math in this codebase, the data source is the genius behind the calculations.
 - The program utilizes this [data source](https://apps.fantasyfootballanalytics.net/) from FFAnalytics. The projections are not just a singular number, but have variance, cutoff, VOR, and a range of numbers over simulations. Their methodology optimizes your draft strategy by allowing you to make statistics based decisions and understand the probability of outcomes.
 
 Due to the wide range of data, I was able to provide lots of advanced analytics.
@@ -154,7 +149,7 @@ Due to the wide range of data, I was able to provide lots of advanced analytics.
 #### 🎲 Advanced Player Analytics
 - **Ceiling/Floor Analysis**: The top 10 players sorted by their ceiling with detailed breakdown on their range of potential outcomes
 - **Uncertainty Scoring**: An uncertainty score provides depth into the risk assessment on each player which is based on player volatility and projection uncertainty
-- **ADP Value Analysis**: Reach cost calculations and value opportunity identification
+- **ADP (Average Draft Position) Value Analysis**: Reach cost calculations and value opportunity identification based on where certain players are selected in drafts, on average
 - **Tier-Based Visualization**: Color-coded tiers (🟢🟡🟠🔴) with cliff and indicators if it is too early to take certain positions
 
 ## How the Data Is Formatted 📋
@@ -230,7 +225,8 @@ These are meant to be a guardrail rather than a strict rule to adhere to. This d
     - Elite tier players
 
 ### **Dynamic ADP Reach Penalties**
-- I configured a dynamic ADP reach penalty to ensure the user is still drafting closer to market trends. I read this interesting [article](https://fantasyfootballanalytics.net/2015/03/fantasy-football-is-like-stock-picking.html) that draft selection is like picking stocks which was really interesting to me.
+- ADP is the aggregate consensus on where players are commonly selected in fantasy football drafts and can change based on the league format.
+- I configured a dynamic ADP reach penalty to ensure the user is still drafting closer to market trends based on an interesting [article](https://fantasyfootballanalytics.net/2015/03/fantasy-football-is-like-stock-picking.html) where draft selection is like picking stocks.
 - **Early Picks (1-36)**: 1.5x penalty multiplier, stricter thresholds
 - **Mid Picks (37-84)**: Standard penalties  
 - **Late Picks (85+)**: 0.7x penalty multiplier, more lenient thresholds
@@ -240,8 +236,10 @@ These are meant to be a guardrail rather than a strict rule to adhere to. This d
 - **Half-PPR**: Boosts WRs, adjusts TE values
 - **Position weights** scale with actual VOR values
 
+#### Important Term:
+**VOR** is value over replacement. This value essentially indicates that if this player was replaced by the average production of a player with the same position.
 ### **Z-Score Style Urgency**
-- The new methodology is to not compare value over replacement absolutely because running backs on average, possess a higher mean VOR. So, now we analyze intra-positionally
+- The new methodology is to not compare VOR (value over replacement) between different positions because running backs on average, possess a higher mean VOR. So, now we analyze intra-positionally
 which players might be drafted (based on composite ADP) in between your next pick. This produces an urgency value, what position will you benefit from the most given
 your roster composition and the available players. This factors in the standard deviations from the FFAnalysis data set.
 
